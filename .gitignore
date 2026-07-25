@@ -1,0 +1,88 @@
+# Operating-system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.stackdump
+
+# Editors and local workspace settings
+.idea/
+.vscode/
+.vs/
+*.iml
+*.ipr
+*.iws
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.swp
+*.tmp
+*~
+.history/
+
+# Dart and Flutter generated files
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+**/.plugin_symlinks/
+**/doc/api/
+**/ios/Flutter/.last_build_id
+
+# Build, test, and analysis output
+/build/
+/coverage/
+.build/
+.buildlog/
+*.log
+*.dmp
+*.symbols
+app.*.symbols
+app.*.map.json
+
+# Windows and native build output
+windows/flutter/ephemeral/
+windows/out/
+windows/x64/
+windows/CMakeFiles/
+windows/cmake_install.cmake
+windows/CMakeCache.txt
+*.dll
+*.exe
+*.exp
+*.ilk
+*.lib
+*.obj
+*.pdb
+
+# Local environment and machine-specific configuration
+.env
+.env.*
+!.env.example
+local.properties
+migrate_working_dir/
+
+# Credentials, signing material, and private keys
+*.cer
+*.crt
+*.jks
+*.key
+*.keystore
+*.p12
+*.pem
+*.pfx
+*.snk
+
+# Reports and diagnostics that may contain device or user information
+battery-report*.html
+*.etl
+*.evtx
+*.trace
+
+# Mobile build artifacts (kept for cross-platform Flutter hygiene)
+/android/app/debug/
+/android/app/profile/
+/android/app/release/

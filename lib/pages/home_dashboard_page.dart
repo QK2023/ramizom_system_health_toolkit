@@ -616,12 +616,6 @@ class _QuickJumpCard extends StatelessWidget {
           target: 'Windows 安全中心',
           color: Colors.green,
         ),
-        (
-          icon: Icons.local_fire_department,
-          key: 'firewall',
-          target: '防火墙',
-          color: Colors.orange,
-        ),
         (icon: Icons.storage, key: 'storage', target: '存储', color: Colors.teal),
         (
           icon: Icons.battery_charging_full,

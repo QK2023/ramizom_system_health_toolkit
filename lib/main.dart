@@ -35,9 +35,14 @@ class _SystemHealthToolkitAppState extends State<SystemHealthToolkitApp>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    widget.settings.addListener(_onSettingsChanged);
     _systemLocale = AppLocalizations.resolveSystemLocales(
       WidgetsBinding.instance.platformDispatcher.locales,
     );
+  }
+
+  void _onSettingsChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -49,44 +54,40 @@ class _SystemHealthToolkitAppState extends State<SystemHealthToolkitApp>
 
   @override
   void dispose() {
+    widget.settings.removeListener(_onSettingsChanged);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: widget.settings,
-      builder: (context, _) {
-        return MaterialApp(
-          onGenerateTitle: (context) => context.l10n.tr('appName'),
-          themeMode: widget.settings.materialThemeMode,
-          locale: widget.settings.explicitLocale ?? _systemLocale,
-          supportedLocales: AppLocalizations.supportedLocales,
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: widget.settings.seedColor,
-              brightness: Brightness.light,
-            ),
-            useMaterial3: true,
-          ),
-          darkTheme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: widget.settings.seedColor,
-              brightness: Brightness.dark,
-            ),
-            useMaterial3: true,
-          ),
-          home: ShellPage(settings: widget.settings),
-          debugShowCheckedModeBanner: false,
-        );
-      },
+    return MaterialApp(
+      onGenerateTitle: (context) => context.l10n.tr('appName'),
+      themeMode: widget.settings.materialThemeMode,
+      locale: widget.settings.explicitLocale ?? _systemLocale,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: widget.settings.seedColor,
+          brightness: Brightness.light,
+        ),
+        useMaterial3: true,
+      ),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: widget.settings.seedColor,
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+      ),
+      home: ShellPage(settings: widget.settings),
+      debugShowCheckedModeBanner: false,
     );
   }
 }

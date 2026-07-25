@@ -48,51 +48,69 @@ class QuickJump {
 
   /// 打开对应的 Windows 设置页面 / 系统工具。
   /// [name] 为 `_uris` 中的键。
-  static Future<void> launch(String name) async {
+  /// 返回 `true` 表示启动命令已发出（不代表目标窗口已打开）。
+  static Future<bool> launch(String name) async {
     final target = uri(name);
-    if (target == null || !Platform.isWindows) return;
+    if (target == null || !Platform.isWindows) return false;
     try {
       if (target.contains(':')) {
-        await Process.start(
-          WindowsPaths.systemExecutable('explorer.exe'),
-          [target],
-          mode: ProcessStartMode.detached,
-        );
+        // 使用 cmd /c start 处理 ms-settings: 等 URI scheme，
+        // 比 explorer.exe 更可靠。
+        await Process.run(WindowsPaths.systemExecutable('cmd.exe'), [
+          '/c',
+          'start',
+          '',
+          target,
+        ]);
+        return true;
       } else if (target == 'taskmgr') {
         await Process.start(
           WindowsPaths.systemExecutable('Taskmgr.exe'),
           const [],
           mode: ProcessStartMode.detached,
         );
+        return true;
       } else if (target == 'devmgmt.msc') {
         await Process.start(
           WindowsPaths.systemExecutable('mmc.exe'),
           const ['devmgmt.msc'],
           mode: ProcessStartMode.detached,
         );
+        return true;
       } else if (target == 'control') {
         await Process.start(
           WindowsPaths.systemExecutable('control.exe'),
           const [],
           mode: ProcessStartMode.detached,
         );
+        return true;
       }
-    } catch (_) {}
+      return false;
+    } catch (e) {
+      // ignore: avoid_print
+      print('QuickJump.launch("$name") error: $e');
+      return false;
+    }
   }
 
   /// 使用系统默认浏览器打开 HTTPS 页面。
-  static Future<void> launchUrl(String url) async {
+  static Future<bool> launchUrl(String url) async {
     if (!Platform.isWindows || !isAllowedWebUrl(url)) {
-      return;
+      return false;
     }
-    final uri = Uri.parse(url);
     try {
-      await Process.start(
-        WindowsPaths.systemExecutable('explorer.exe'),
-        [uri.toString()],
-        mode: ProcessStartMode.detached,
-      );
-    } catch (_) {}
+      await Process.run(WindowsPaths.systemExecutable('cmd.exe'), [
+        '/c',
+        'start',
+        '',
+        url,
+      ]);
+      return true;
+    } catch (e) {
+      // ignore: avoid_print
+      print('QuickJump.launchUrl("$url") error: $e');
+      return false;
+    }
   }
 
   static bool isAllowedWebUrl(String url) => _allowedWebUrls.contains(url);

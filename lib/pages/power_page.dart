@@ -577,7 +577,6 @@ class _PerformanceSettingsCard extends StatelessWidget {
       '启动项',
     ),
     (Icons.sports_esports_outlined, 'gameMode', 'gameModeDesc', '游戏模式'),
-    (Icons.query_stats, 'batteryUsage', 'batteryUsageDesc', '电池使用情况'),
   ];
 
   @override
@@ -616,10 +615,14 @@ class _PerformanceSettingsCard extends StatelessWidget {
                       .map(
                         (item) => SizedBox(
                           width: width,
+                          height: 88,
                           child: OutlinedButton(
                             onPressed: () => QuickJump.launch(item.$4),
                             style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
                               alignment: Alignment.centerLeft,
                             ),
                             child: Row(
@@ -630,15 +633,24 @@ class _PerformanceSettingsCard extends StatelessWidget {
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Text(context.l10n.tr(item.$2)),
+                                      Text(
+                                        context.l10n.tr(item.$2),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 2),
                                       Text(
                                         context.l10n.tr(item.$3),
                                         style: theme.textTheme.bodySmall,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ],
                                   ),
                                 ),
+                                const SizedBox(width: 8),
                                 const Icon(Icons.open_in_new, size: 16),
                               ],
                             ),

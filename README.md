@@ -1,262 +1,143 @@
 # Ramizom System Health Toolkit
 
-> [!IMPORTANT]
-> **This is an AI-generated project.** Its source code and documentation were
-> primarily generated and iteratively reviewed with OpenAI Codex under human
-> direction. AI-generated code can contain mistakes. Review, test, and sign your
-> own build before distributing it or using it on an important computer.
+> This project was mainly generated with AI under human direction. It may still
+> contain mistakes. Please review and test the code before using or distributing
+> it.
 
-Ramizom System Health Toolkit is a bilingual Flutter desktop application for
-Windows. It presents system, battery, storage, privacy, and maintenance
-information in language intended for everyday users.
+A small Flutter application for viewing Windows system information and using a
+few common settings and repair tools.
 
-| Product detail | Value |
+| Item | Details |
 | --- | --- |
-| Product | Ramizom System Health Toolkit |
 | Version | 5.0.0.0 |
-| Platform | Windows 10 and Windows 11 |
+| Platform | Windows |
 | Developer | Professor Creeper |
-| Development period | June 21, 2026 to July 25, 2026 |
+| Development date | June 21, 2026 to July 25, 2026 |
 | Website | [Ramizom.com](https://ramizom.com) |
-| Privacy policy | [Ramizom Privacy Policy](https://ramizom.com/privacy) |
+| Privacy policy | [ramizom.com/privacy](https://ramizom.com/privacy) |
 
 ## What's the goal of this project?
 
-The goal is to place the Windows health information and safe maintenance actions
-that ordinary users need most in one understandable application.
+To make some Windows health information easier to find and read.
 
-## What problem is this project going to solve?
+## What problem does this project solve?
 
-Windows exposes useful information across Task Manager, Settings, PowerShell,
-Control Panel, battery reports, and storage tools. Finding the right page,
-interpreting technical fields, and knowing which actions are reversible can be
-difficult. This application gathers that information, explains unavailable
-values honestly, and puts confirmation in front of system-changing actions.
+Windows system information is spread across several pages and tools. This
+application puts a selection of that information in one place.
 
 ## Why did I develop it?
 
-I developed it to make routine Windows checks less fragmented and less
-intimidating. The project also explores how an AI-assisted development workflow
-can produce a practical native desktop utility while keeping the human in
-control of product decisions, safety review, and release approval.
+I wanted a simple desktop tool for checking a Windows computer without opening
+many separate system utilities.
 
 ## Who is the target user?
 
-The primary audience is everyday Windows laptop and desktop users. No command
-line knowledge is required. Technicians may also use it as a quick first-look
-dashboard, but it is not intended to replace vendor diagnostics or professional
-data-recovery tools.
+Regular Windows users who want a basic overview of their computer. It is not a
+replacement for professional diagnostic or repair software.
 
-## What are its use cases?
+## What are the use cases?
 
-- Check CPU, memory, graphics, and system-drive activity at a glance.
-- Review battery design capacity, full-charge capacity, health, cycle count,
-  recent discharge history, and long-term capacity history.
-- Inspect physical-drive health, temperature, lifetime reads and writes, wear,
-  power-on time, and available reliability counters.
-- Apply or restore microphone, camera, and screen-capture privacy protections.
-- Open the correct Windows Settings page without searching through menus.
-- Pause or resume Windows Update using a clearly confirmed maintenance action.
-- Flush the DNS cache and reset Winsock when network connectivity is damaged.
-- Refresh desktop and taskbar icon caches without deleting personal files.
-- Receive simple recommendations based on the current system state.
+- View CPU, memory, graphics, and system-drive usage.
+- Read battery capacity, health, cycle count, and history.
+- View available disk health and usage data.
+- Change several Windows privacy settings.
+- Open common Windows Settings pages.
+- Pause or resume Windows Update.
+- Refresh network components or the Windows icon cache.
 
-## How it works
-
-```mermaid
-flowchart LR
-    UI["Flutter user interface"] --> Read["Read-only health collectors"]
-    Read --> PS["PowerShell and CIM"]
-    Read --> Battery["powercfg battery report"]
-    Read --> Storage["Windows Storage API"]
-    PS --> UI
-    Battery --> Parse["Local HTML parser"]
-    Parse --> UI
-    Storage --> UI
-    UI --> Confirm["User confirmation"]
-    Confirm --> Admin["Windows administrator prompt"]
-    Admin --> Change["Reversible maintenance action"]
-```
-
-Health collection is local. The application does not include analytics,
-telemetry, cloud accounts, embedded API keys, or a remote service. It opens only
-the product website or privacy-policy page when the user explicitly selects
-those links.
-
-The project uses documented Windows interfaces and bundled system tools:
-
-- PowerShell and CIM for system and storage information.
-- `powercfg /batteryreport` for the Windows battery report.
-- Windows Storage IOCTL queries for read-only NVMe health data.
-- `ms-settings:` links for Windows Settings pages.
-- Windows registry policy values for confirmed, reversible privacy and update
-  controls.
-- `ipconfig`, `netsh`, and `ie4uinit` for focused maintenance actions.
-
-## Functions and tutorial with illustrations
-
-### 1. Navigate the application
-
-On a wide window, pages appear in a rail on the left. On a portrait or narrow
-window, the main destinations move to the bottom and remaining pages appear
-under **Other**.
+## Functions and tutorial
 
 ```text
-Wide window                              Narrow window
-+-----------+-----------------------+    +----------------------+
-| Home      | Page content          |    | Page content         |
-| Privacy   |                       |    |                      |
-| Battery   |                       |    +----------------------+
-| Disk      |                       |    | Home Privacy Battery |
-| Recommend |                       |    |        Other         |
-| Settings  |                       |    +----------------------+
-+-----------+-----------------------+
+Home         System overview
+Privacy      Microphone, camera, and capture controls
+Battery      Battery report and history
+Disk Health  Drive information
+Recommended  Suggestions and tools
+Settings     Theme, language, and refresh rate
 ```
 
-### 2. Read the Home dashboard
+On a narrow window, navigation moves to the bottom and some pages appear under
+**More**.
 
-Open **Home** to see the current processor, memory, graphics, and system-drive
-summary. Use a quick-jump chip to open the related Windows Settings page.
-Unavailable measurements remain marked as unavailable instead of being
-estimated.
+### Home
 
-```mermaid
-flowchart TD
-    Open["Open Home"] --> Summary["Review device and usage cards"]
-    Summary --> Status{"Needs attention?"}
-    Status -- "No" --> Done["No action required"]
-    Status -- "Yes" --> Recommend["Open Recommendations"]
-    Summary --> Jump["Optional: open a Windows Settings shortcut"]
-```
+View the basic system summary and open related Windows Settings pages.
 
-### 3. Review battery information
+### Battery
 
-1. Open **Battery**.
-2. Wait for Windows to generate its local battery report.
-3. Review design capacity, full-charge capacity, health, cycle count, and the
-   charge level recorded in the report.
-4. Read the recent battery-use graph and capacity-history graph.
-5. Select **Regenerate** when you need a fresh report.
-
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant A as Application
-    participant W as Windows powercfg
-    U->>A: Open Battery
-    A->>W: Generate a 14-day battery report
-    W-->>A: Temporary HTML file
-    A->>A: Parse capacities and history
-    A-->>U: Show cards and charts
-    A->>A: Delete the temporary report
-```
-
-Battery figures come from Windows and the battery firmware. A missing cycle
-count or history means the device did not provide it; the application does not
-invent a replacement value.
-
-### 4. Inspect disk health
-
-1. Open **Disk Health**.
-2. Select a physical drive.
-3. Review the health assessment and the metrics that its firmware and driver
-   expose.
-4. Select **Refresh** after changing or reconnecting a drive.
+Open **Battery** and wait for Windows to generate a report. The app reads its
+capacity and history data, then removes the temporary file.
 
 ```text
-+------------------------------------------------------+
-| Drive model                         Health: 97%       |
-+------------------------------------------------------+
-| Lifetime read     | Lifetime written | Temperature   |
-| Power-on time     | Life used        | Media errors  |
-| Power cycles      | Unsafe shutdowns | Bus / sectors |
-+------------------------------------------------------+
+Open Battery
+     |
+     v
+Windows creates battery-report.html
+     |
+     v
+The app reads and displays the report, then removes it
 ```
 
-Metric availability varies by drive type, enclosure, firmware, and driver.
-Missing values are shown as unavailable. All native disk queries in this
-project are read-only.
+Some batteries do not provide a cycle count or complete history.
 
-### 5. Use privacy protection
+### Disk Health
 
-Open **Privacy & Security**, then enable or disable microphone, camera, or
-screen-capture protection. Confirm the Windows administrator prompt when a
-machine policy must change.
+Choose a drive and review the values provided by Windows. Some drives and USB
+enclosures provide only limited information.
 
-```mermaid
-flowchart LR
-    Toggle["Change a protection switch"] --> UAC["Approve Windows prompt"]
-    UAC --> Backup["Back up the previous value"]
-    Backup --> Apply["Apply the privacy policy"]
-    Apply --> Restore["Turning it off restores the previous value"]
-```
+### Privacy & Security
 
-These controls affect Windows permission and capture policies. They cannot stop
-external recording hardware or every privileged driver-level capture tool.
-Organization-managed policies may override them.
+Use the switches to change microphone, camera, or screen-capture restrictions.
+Windows may ask for administrator permission. Turning a switch off restores the
+previous value when possible. These settings cannot block external recording
+devices or every third-party capture tool.
 
-### 6. Use recommendations and maintenance tools
+### Recommended Settings
 
-Open **Recommendations** to review simple actions based on the current system.
-Every maintenance action displays a confirmation before it changes Windows.
+This page shows basic suggestions and four tools:
 
-| Tool | What it changes | What to expect |
-| --- | --- | --- |
-| Pause updates | Windows Update pause values | Pauses feature and quality updates until September 5, 2042 |
-| Resume updates | Restores backed-up update values | Returns update control to its previous state when possible |
-| Repair network | DNS cache and Winsock catalog | A Windows restart may be needed |
-| Repair icons | Windows icon cache | Desktop and taskbar icons refresh |
+| Tool | Action |
+| --- | --- |
+| Pause updates | Pauses Windows updates until September 5, 2042 |
+| Resume updates | Restores the previous update values when available |
+| Repair network | Flushes DNS and resets Winsock |
+| Repair icons | Refreshes the Windows icon cache |
 
-Do not use **Pause updates** on a computer whose security policy requires
-automatic patching. Organization policy can prevent these controls from taking
-effect.
+Read the confirmation before running a tool. Network repair may require a
+restart.
 
-### 7. Change language and appearance
+### Settings
 
-Open **Settings** to choose light, dark, or system theme; select an accent color;
-change the dashboard refresh interval; and select a language.
+Change the theme, accent color, language, and Home refresh interval. With
+**Use system setting**:
 
-The default language follows Windows:
+- Simplified Chinese Windows locales use Simplified Chinese.
+- Other locales, including Traditional Chinese, use English.
 
-- Simplified Chinese system locales use Simplified Chinese.
-- Traditional Chinese and all other locales use English.
-- The manual language setting overrides automatic selection.
+## Data and permissions
 
-## Safety and privacy
+The app reads local data through PowerShell, CIM, `powercfg`, and Windows
+storage interfaces. It has no telemetry or online account system.
 
-- Health collection is read-only and uses local Windows data.
-- System-changing actions require an explicit click and confirmation.
-- Actions that need elevated rights trigger the standard Windows administrator
-  prompt.
-- Privacy and update features save previous values before overwriting them and
-  provide a restore action.
-- The battery report is created in a unique temporary directory, parsed locally,
-  and deleted afterward.
-- The application does not erase disks, format volumes, alter firmware, change
-  voltages, overclock hardware, or run destructive storage commands.
-- No secret, credential, personal path, private endpoint, or signing key is
-  intentionally stored in this repository.
+Most checks are read-only. Privacy, update, and repair tools change Windows
+settings and may require administrator permission. Test the app before using it
+on an important computer.
 
-No software can guarantee safety on every Windows installation. Back up
-important data, read each confirmation, and test releases on a non-critical
-machine before broad deployment.
+## Build
 
-## Development
+Requirements:
 
-### Requirements
+- Flutter with a Dart 3.11 compatible toolchain
+- Visual Studio with **Desktop development with C++**
 
-- Windows 10 or Windows 11
-- Flutter with Dart 3.11 or a compatible later toolchain
-- Visual Studio with the **Desktop development with C++** workload
-
-### Run from source
+Run:
 
 ```powershell
 flutter pub get
 flutter run -d windows
 ```
 
-### Validate
+Test and build:
 
 ```powershell
 flutter analyze
@@ -264,22 +145,5 @@ flutter test
 flutter build windows --release
 ```
 
-The release executable is created under `build\windows\x64\runner\Release`.
-Local builds are not automatically code-signed. Sign and independently scan any
-binary before public distribution.
-
-## Project structure
-
-```text
-lib/
-  localization/       English and Simplified Chinese text
-  pages/              Application screens
-  services/           Windows collectors and maintenance actions
-test/                 Parser, localization, and safety tests
-windows/              Flutter runner and read-only native storage integration
-```
-
-Before publishing a contribution, run the validation commands and check that no
-local reports, logs, environment files, certificates, or credentials are
-staged. The repository's `.gitignore` excludes common examples, but an ignore
-file is not a substitute for reviewing the staged diff.
+The release build is placed in `build\windows\x64\runner\Release`. Local builds
+are not automatically code-signed.

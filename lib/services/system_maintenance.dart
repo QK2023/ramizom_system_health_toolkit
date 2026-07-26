@@ -167,6 +167,11 @@ $netsh = Join-Path $env:SystemRoot 'System32\netsh.exe'
 if ($LASTEXITCODE -ne 0) { throw 'DNS flush failed' }
 & $netsh winsock reset | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'Winsock reset failed' }
+# 关闭 Windows 系统代理（非关键操作，静默失败）
+try {
+  Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' -Name ProxyEnable -Value 0 -Type DWord -ErrorAction Stop | Out-Null
+  & $netsh winhttp reset proxy 2>&1 | Out-Null
+} catch { }
 ''';
 
   static const _updatePauseScript = r'''

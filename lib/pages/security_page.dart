@@ -171,11 +171,10 @@ class _SecurityPageState extends State<SecurityPage> {
           title: context.l10n.tr('screenProtection'),
           description: context.l10n.tr('screenProtectionDesc'),
           impact: context.l10n.tr('screenProtectionImpact'),
-          enabled: _state.screenCaptureProtected,
-          busy: _busyFeature == PrivacyFeature.screenCapture,
-          onChanged: _busy
-              ? null
-              : (value) => _setFeature(PrivacyFeature.screenCapture, value),
+          enabled: false,
+          comingSoon: true,
+          busy: false,
+          onChanged: null,
         ),
         const SizedBox(height: 12),
         _ProtectionCard(
@@ -188,21 +187,6 @@ class _SecurityPageState extends State<SecurityPage> {
           onChanged: _busy
               ? null
               : (value) => _setFeature(PrivacyFeature.camera, value),
-        ),
-        const SizedBox(height: 16),
-        Card(
-          color: theme.colorScheme.surfaceContainerHighest,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Icons.info_outline),
-                const SizedBox(width: 12),
-                Expanded(child: Text(context.l10n.tr('privacyAdminNote'))),
-              ],
-            ),
-          ),
         ),
         const SizedBox(height: 16),
         _PrivacySettingsCard(),
@@ -218,6 +202,7 @@ class _ProtectionCard extends StatelessWidget {
   final String impact;
   final bool enabled;
   final bool busy;
+  final bool comingSoon;
   final ValueChanged<bool>? onChanged;
 
   const _ProtectionCard({
@@ -227,6 +212,7 @@ class _ProtectionCard extends StatelessWidget {
     required this.impact,
     required this.enabled,
     required this.busy,
+    this.comingSoon = false,
     required this.onChanged,
   });
 
@@ -255,11 +241,9 @@ class _ProtectionCard extends StatelessWidget {
                 children: [
                   Text(title, style: theme.textTheme.titleMedium),
                   const SizedBox(height: 5),
-                  Text(description, style: theme.textTheme.bodyMedium),
-                  const SizedBox(height: 6),
                   Text(
-                    impact,
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    '$description，$impact。',
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
@@ -267,7 +251,24 @@ class _ProtectionCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            if (busy)
+            if (comingSoon)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  context.l10n.tr('comingSoon'),
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              )
+            else if (busy)
               const Padding(
                 padding: EdgeInsets.all(10),
                 child: SizedBox(

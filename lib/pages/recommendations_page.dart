@@ -448,7 +448,6 @@ class _MaintenanceToolsCard extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.wifi_find),
             title: Text(context.l10n.tr('networkRepair')),
-            subtitle: Text(context.l10n.tr('repairNetworkDesc')),
             trailing: busy == 'network'
                 ? const SizedBox(
                     width: 24,
@@ -464,7 +463,6 @@ class _MaintenanceToolsCard extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.desktop_windows_outlined),
             title: Text(context.l10n.tr('repairShell')),
-            subtitle: Text(context.l10n.tr('repairShellDesc')),
             trailing: busy == 'shell'
                 ? const SizedBox(
                     width: 24,

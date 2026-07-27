@@ -43,6 +43,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  msix: ^3.18.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -92,3 +93,15 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+msix_config:
+  display_name: Ramizom System Health Toolkit
+  publisher_display_name: Professor Creeper
+  identity_name: 43980lipa.56633F90D05E9
+  publisher: CN=BC21780F-BBD9-48CB-9B36-1C335477A8B4
+  msix_version: 5.0.0.0
+  logo_path: icon.png
+  architecture: x64
+  output_path: build/msix
+  output_name: STORE_RELEASE_UNSIGNED_Ramizom_System_Health_Toolkit_5.0.0.0_x64
+  store: true

@@ -50,6 +50,17 @@ windows/x64/
 windows/CMakeFiles/
 windows/cmake_install.cmake
 windows/CMakeCache.txt
+AppPackages/
+BundleArtifacts/
+PackageLayout/
+_Test/
+*.appx
+*.appxbundle
+*.appxupload
+*.appinstaller
+*.msix
+*.msixbundle
+*.msixupload
 *.dll
 *.exe
 *.exp
@@ -68,6 +79,11 @@ migrate_working_dir/
 # Credentials, signing material, and private keys
 *.cer
 *.crt
+*.p7b
+*.p7c
+*.p7x
+*.pvk
+*.spc
 *.jks
 *.key
 *.keystore
@@ -75,6 +91,17 @@ migrate_working_dir/
 *.pem
 *.pfx
 *.snk
+.secrets/
+credentials/
+secrets/
+
+# Local Microsoft Store / Partner Center submission material
+partner-center/
+store-listing/
+store-submission/
+submission-packages/
+WACK/
+appcertkit/
 
 # Reports and diagnostics that may contain device or user information
 battery-report*.html

@@ -86,8 +86,3 @@ battery-report*.html
 /android/app/debug/
 /android/app/profile/
 /android/app/release/
-
-# MSIX packaging artifacts (contains Store identity, certificates, build output)
-*.msix
-*.p7
-msix_package/

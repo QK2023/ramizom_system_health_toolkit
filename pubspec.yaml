@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 5.0.0+0
+version: 6.0.0+0
 
 environment:
   sdk: ^3.11.0
@@ -99,9 +99,9 @@ msix_config:
   publisher_display_name: Professor Creeper
   identity_name: 43980lipa.56633F90D05E9
   publisher: CN=BC21780F-BBD9-48CB-9B36-1C335477A8B4
-  msix_version: 5.0.0.0
+  msix_version: 6.0.0.0
   logo_path: icon.png
   architecture: x64
   output_path: build/msix
-  output_name: STORE_RELEASE_UNSIGNED_Ramizom_System_Health_Toolkit_5.0.0.0_x64
+  output_name: STORE_RELEASE_UNSIGNED_Ramizom_System_Health_Toolkit_6.0.0.0_x64
   store: true

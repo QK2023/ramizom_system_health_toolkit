@@ -9,7 +9,7 @@ few common settings and repair tools.
 
 | Item | Details |
 | --- | --- |
-| Version | 5.0.0.0 |
+| Version | 6.0.0.0 |
 | Platform | Windows |
 | Developer | Professor Creeper |
 | Development date | June 21, 2026 to July 25, 2026 |

@@ -193,7 +193,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ListTile(
                 leading: const Icon(Icons.code),
                 title: Text(l.tr('version')),
-                subtitle: const Text('5.0.0.0'),
+                subtitle: const Text('6.0.0.0'),
               ),
               const Divider(height: 1),
               ListTile(

@@ -11,6 +11,7 @@ import 'pages/security_page.dart';
 import 'pages/settings_page.dart';
 
 import 'services/app_settings.dart';
+import 'services/privacy_protection.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -145,6 +146,7 @@ class _ShellPageState extends State<ShellPage> {
     super.initState();
     _pages = List<Widget?>.filled(6, null);
     _pages[0] = HomeDashboardPage(settings: widget.settings);
+    PrivacyProtection.collect();
   }
 
   @override

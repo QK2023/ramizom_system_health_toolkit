@@ -311,11 +311,35 @@ class _RecommendationsPageState extends State<RecommendationsPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          context.l10n.tr(result.success ? 'actionCompleted' : 'actionFailed'),
+          context.l10n.tr(
+            result.exitCode != null
+                ? result.message
+                : result.success
+                ? 'actionCompleted'
+                : 'actionFailed',
+            {'code': result.exitCode},
+          ),
         ),
         backgroundColor: result.success ? Colors.green : Colors.red,
       ),
     );
+  }
+
+  Future<void> _runExtraTool(String id) async {
+    if (_maintenanceBusy != null) return;
+    final confirmed = await _confirmMaintenance(
+      title: context.l10n.tr(id),
+      message: context.l10n.tr('${id}Desc'),
+      confirmLabel: context.l10n.tr('runTool'),
+    );
+    if (!confirmed || !mounted || _maintenanceBusy != null) return;
+    setState(() => _maintenanceBusy = id);
+    try {
+      final result = await SystemMaintenance.runTool(id);
+      if (mounted) _showMaintenanceResult(result);
+    } finally {
+      if (mounted) setState(() => _maintenanceBusy = null);
+    }
   }
 
   @override
@@ -339,11 +363,12 @@ class _RecommendationsPageState extends State<RecommendationsPage> {
           children: [
             Icon(Icons.lightbulb, color: theme.colorScheme.primary),
             const SizedBox(width: 8),
-            Text(
-              context.l10n.tr('recommendedForYou'),
-              style: theme.textTheme.titleMedium,
+            Expanded(
+              child: Text(
+                context.l10n.tr('recommendedForYou'),
+                style: theme.textTheme.titleMedium,
+              ),
             ),
-            const Spacer(),
             TextButton.icon(
               onPressed: () => _refresh(force: true),
               icon: const Icon(Icons.refresh, size: 18),
@@ -377,6 +402,29 @@ class _RecommendationsPageState extends State<RecommendationsPage> {
           onResumeUpdates: _resumeWindowsUpdates,
           onRepairNetwork: _repairNetwork,
           onRepairShell: _repairShellIcons,
+        ),
+        Card(
+          child: Column(
+            children: [
+              for (final id in SystemMaintenance.extraTools)
+                ListTile(
+                  leading: const Icon(Icons.build_outlined),
+                  title: Text(context.l10n.tr(id)),
+                  trailing: _maintenanceBusy == id
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : OutlinedButton(
+                          onPressed: _maintenanceBusy == null
+                              ? () => _runExtraTool(id)
+                              : null,
+                          child: Text(context.l10n.tr('runTool')),
+                        ),
+                ),
+            ],
+          ),
         ),
       ],
     );
@@ -412,11 +460,10 @@ class _MaintenanceToolsCard extends StatelessWidget {
                   : Icons.pause_circle_outline,
               color: updatePauseState.active ? Colors.orange : null,
             ),
-            title: Text(context.l10n.tr('pauseUpdates')),
-            subtitle: Text(
-              updatePauseState.active
-                  ? context.l10n.tr('updatesPausedUntil')
-                  : context.l10n.tr('pauseUntil'),
+            title: Text(
+              context.l10n.tr(
+                updatePauseState.active ? 'updatesPausedUntil' : 'pauseUpdates',
+              ),
             ),
             trailing: busy == 'updates'
                 ? const SizedBox(

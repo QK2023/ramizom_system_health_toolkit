@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
+import 'device_privacy.dart';
 import 'ps_runner.dart';
-import 'windows_paths.dart';
+import 'elevated_runner.dart';
 
 enum PrivacyFeature { microphone, camera, screenCapture }
 
@@ -53,23 +56,45 @@ class PrivacyApplyResult {
 
 class PrivacyProtection {
   PrivacyProtection._();
+  static const _channel = MethodChannel('system_health_toolkit/app');
+  static bool _applying = false;
+  static int _revision = 0;
+
+  static Future<bool> syncCaptureWindow(bool enabled) async {
+    try {
+      return await _channel.invokeMethod<bool>(
+            'setCaptureProtection',
+            enabled,
+          ) ??
+          false;
+    } catch (_) {
+      return false;
+    }
+  }
 
   static Future<PrivacyProtectionState> collect() async {
+    final revision = _revision;
     final result = await PsRunner.runResult(_statusScript);
     if (!result.succeeded) {
-      return PrivacyProtectionState.empty(
-        message: result.timedOut ? '隐私策略读取超时' : '无法读取隐私策略',
-      );
+      return PrivacyProtectionState.empty(message: 'privacyReadFailed');
     }
     try {
       final json = jsonDecode(result.stdout) as Map<String, dynamic>;
+      if (revision != _revision) {
+        return PrivacyProtectionState.empty(message: 'privacyReadFailed');
+      }
+      final capturePolicy = json['screenCapture'] == true;
+      final windowProtected = await syncCaptureWindow(capturePolicy);
       return PrivacyProtectionState(
         microphoneProtected: json['microphone'] == true,
         cameraProtected: json['camera'] == true,
-        screenCaptureProtected: json['screenCapture'] == true,
+        screenCaptureProtected: capturePolicy && windowProtected,
+        message: capturePolicy && !windowProtected
+            ? 'privacyCaptureFailed'
+            : null,
       );
     } catch (_) {
-      return PrivacyProtectionState.empty(message: '隐私策略格式无法解析');
+      return PrivacyProtectionState.empty(message: 'privacyReadFailed');
     }
   }
 
@@ -89,6 +114,31 @@ class PrivacyProtection {
     bool? camera,
     bool? screenCapture,
   }) async {
+    if (_applying || Platform.environment['FLUTTER_TEST'] == 'true') {
+      return PrivacyApplyResult(
+        success: false,
+        message: 'privacyFailed',
+        state: PrivacyProtectionState.empty(),
+      );
+    }
+    _applying = true;
+    _revision++;
+    try {
+      return await _apply(
+        microphone: microphone,
+        camera: camera,
+        screenCapture: screenCapture,
+      );
+    } finally {
+      _applying = false;
+    }
+  }
+
+  static Future<PrivacyApplyResult> _apply({
+    bool? microphone,
+    bool? camera,
+    bool? screenCapture,
+  }) async {
     if (!Platform.isWindows) {
       return PrivacyApplyResult(
         success: false,
@@ -97,7 +147,7 @@ class PrivacyProtection {
       );
     }
 
-    final machineScript = _machinePolicyScript(
+    final machineScript = machinePolicyScript(
       microphone: microphone,
       camera: camera,
       screenCapture: screenCapture,
@@ -106,20 +156,20 @@ class PrivacyProtection {
     if (!elevated) {
       return PrivacyApplyResult(
         success: false,
-        message: '未获得管理员权限，设置没有更改',
+        message: 'privacyFailed',
         state: await collect(),
       );
     }
 
     final userResult = await PsRunner.runResult(
-      _userPolicyScript(
+      userPolicyScript(
         microphone: microphone,
         camera: camera,
         screenCapture: screenCapture,
       ),
     );
     final state = await collect();
-    if (!userResult.succeeded) {
+    if (!userResult.succeeded || state.message != null) {
       return PrivacyApplyResult(
         success: false,
         message: '系统策略已写入，但当前用户隐私设置更新失败',
@@ -145,33 +195,17 @@ class PrivacyProtection {
     );
   }
 
-  static Future<bool> _runElevated(String script) async {
-    try {
-      final encoded = _encodePowerShell(script);
-      final result = await Process.run(WindowsPaths.powershell, [
-        '-NoLogo',
-        '-NoProfile',
-        '-NonInteractive',
-        '-Command',
-        "\$powershell = Join-Path \$env:SystemRoot "
-            "'System32\\WindowsPowerShell\\v1.0\\powershell.exe'; "
-            "\$process = Start-Process -FilePath \$powershell -Verb RunAs "
-            "-WindowStyle Hidden -PassThru -Wait -ArgumentList "
-            "'-NoLogo','-NoProfile','-NonInteractive','-EncodedCommand','$encoded'; "
-            'exit \$process.ExitCode',
-      ]);
-      return result.exitCode == 0;
-    } catch (_) {
-      return false;
-    }
-  }
+  static Future<bool> _runElevated(String script) async =>
+      await ElevatedRunner.run(script) == 0;
 
-  static String _machinePolicyScript({
+  @visibleForTesting
+  static String machinePolicyScript({
     bool? microphone,
     bool? camera,
     bool? screenCapture,
   }) {
-    final script = StringBuffer(r'''
+    final script = StringBuffer(DevicePrivacy.functions);
+    script.write(r'''
 $ErrorActionPreference = 'Stop'
 $appPrivacy = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy'
 $gameDvr = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR'
@@ -197,24 +231,26 @@ function Restore-Value($path, $name, $backupName, $protectedValue) {
   try {
     $marker = (Get-ItemProperty -Path $backup -Name $backupName -ErrorAction Stop).$backupName
   } catch {
-    # 兼容旧版：旧版写入了保护值，但没有保存备份标记。
-    try {
-      $current = (Get-ItemProperty -Path $path -Name $name -ErrorAction Stop).$name
-      if ([int]$current -eq [int]$protectedValue) {
-        Remove-ItemProperty -Path $path -Name $name -ErrorAction SilentlyContinue
-      }
-    } catch {}
+    # No ownership record: never remove policy installed by another administrator.
+    return
+  }
+  $current = Get-ItemProperty -Path $path -Name $name -ErrorAction SilentlyContinue
+  if ($null -eq $current -or [string]$current.$name -ne [string]$protectedValue) {
+    Remove-ItemProperty -Path $backup -Name $backupName -ErrorAction Stop
     return
   }
   if ($marker -eq 'MISSING') {
-    Remove-ItemProperty -Path $path -Name $name -ErrorAction SilentlyContinue
+    Remove-ItemProperty -Path $path -Name $name -ErrorAction Stop
   } elseif ($marker.StartsWith('VALUE:')) {
     Set-ItemProperty -Path $path -Name $name -Type DWord -Value ([int]$marker.Substring(6))
   }
-  Remove-ItemProperty -Path $backup -Name $backupName -ErrorAction SilentlyContinue
+  Remove-ItemProperty -Path $backup -Name $backupName -ErrorAction Stop
 }
 ''');
     if (microphone != null) {
+      script.writeln(
+        'Set-PrivacyDevices microphone \$${microphone ? 'true' : 'false'}',
+      );
       script.writeln(
         microphone
             ? "Protect-Value \$appPrivacy 'LetAppsAccessMicrophone' "
@@ -224,6 +260,9 @@ function Restore-Value($path, $name, $backupName, $protectedValue) {
       );
     }
     if (camera != null) {
+      script.writeln(
+        'Set-PrivacyDevices camera \$${camera ? 'true' : 'false'}',
+      );
       script.writeln(
         camera
             ? "Protect-Value \$appPrivacy 'LetAppsAccessCamera' "
@@ -269,7 +308,8 @@ function Restore-Value($path, $name, $backupName, $protectedValue) {
     return script.toString();
   }
 
-  static String _userPolicyScript({
+  @visibleForTesting
+  static String userPolicyScript({
     bool? microphone,
     bool? camera,
     bool? screenCapture,
@@ -297,29 +337,22 @@ function Restore-Value($path, $name, $backupName, $type, $protectedValue) {
   try {
     $marker = (Get-ItemProperty -Path $backup -Name $backupName -ErrorAction Stop).$backupName
   } catch {
-    # 兼容旧版：仅撤销本应用旧版使用的精确保护值。
-    try {
-      $current = (Get-ItemProperty -Path $path -Name $name -ErrorAction Stop).$name
-      if ([string]$current -eq [string]$protectedValue) {
-        if ($type -eq 'String') {
-          # 旧版没有记录原值。删除本应用写入的 Deny 比强制写入 Allow 更安全，
-          # 这样 Windows 会回到未明确授权的状态。
-          Remove-ItemProperty -Path $path -Name $name -ErrorAction SilentlyContinue
-        } else {
-          Remove-ItemProperty -Path $path -Name $name -ErrorAction SilentlyContinue
-        }
-      }
-    } catch {}
+    # No ownership record: never remove policy installed by another administrator.
+    return
+  }
+  $current = Get-ItemProperty -Path $path -Name $name -ErrorAction SilentlyContinue
+  if ($null -eq $current -or [string]$current.$name -ne [string]$protectedValue) {
+    Remove-ItemProperty -Path $backup -Name $backupName -ErrorAction Stop
     return
   }
   if ($marker -eq 'MISSING') {
-    Remove-ItemProperty -Path $path -Name $name -ErrorAction SilentlyContinue
+    Remove-ItemProperty -Path $path -Name $name -ErrorAction Stop
   } elseif ($marker.StartsWith('VALUE:')) {
     $value = $marker.Substring(6)
     if ($type -eq 'DWord') { $value = [int]$value }
     Set-ItemProperty -Path $path -Name $name -Type $type -Value $value
   }
-  Remove-ItemProperty -Path $backup -Name $backupName -ErrorAction SilentlyContinue
+  Remove-ItemProperty -Path $backup -Name $backupName -ErrorAction Stop
 }
 ''');
     if (microphone != null) {
@@ -373,17 +406,10 @@ function Restore-Value($path, $name, $backupName, $type, $protectedValue) {
         : "Restore-Value $path 'Value' '$backupName' 'String' 'Deny'";
   }
 
-  static String _encodePowerShell(String script) {
-    final bytes = <int>[];
-    for (final unit in script.codeUnits) {
-      bytes
-        ..add(unit & 0xff)
-        ..add(unit >> 8);
-    }
-    return base64Encode(bytes);
-  }
-
-  static const _statusScript = r'''
+  static const _statusScript =
+      DevicePrivacy.functions +
+      r'''
+$ErrorActionPreference = 'Stop'
 $appPrivacy = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy'
 $gameDvr = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR'
 $tabletPc = 'HKCU:\SOFTWARE\Policies\Microsoft\TabletPC'
@@ -405,13 +431,13 @@ $micConsent = Read-Value 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Capabi
 $cameraConsent = Read-Value 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\webcam' 'Value'
 
 [pscustomobject]@{
-  microphone = ([int]$micPolicy -eq 2 -or [string]$micConsent -eq 'Deny')
-  camera = ([int]$cameraPolicy -eq 2 -or [string]$cameraConsent -eq 'Deny')
+  microphone = ([int]$micPolicy -eq 2 -and [string]$micConsent -eq 'Deny' -and (Test-PrivacyDevices microphone))
+  camera = ([int]$cameraPolicy -eq 2 -and [string]$cameraConsent -eq 'Deny' -and (Test-PrivacyDevices camera))
   screenCapture = (
-    [int]$captureProgrammatic -eq 2 -or
-    [int]$captureBorderless -eq 2 -or
-    ($null -ne $allowGameDvr -and [int]$allowGameDvr -eq 0) -or
-    [int]$disableSnipping -eq 1 -or
+    [int]$captureProgrammatic -eq 2 -and
+    [int]$captureBorderless -eq 2 -and
+    ($null -ne $allowGameDvr -and [int]$allowGameDvr -eq 0) -and
+    [int]$disableSnipping -eq 1 -and
     ($null -ne $userGameDvr -and [int]$userGameDvr -eq 0)
   )
 } | ConvertTo-Json -Compress

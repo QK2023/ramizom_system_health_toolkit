@@ -84,10 +84,9 @@ flutter::EncodableMap QueryNvmeHealth(int device_id) {
   auto* descriptor =
       reinterpret_cast<PSTORAGE_PROTOCOL_DATA_DESCRIPTOR>(buffer.data());
   auto* result_protocol = &descriptor->ProtocolSpecificData;
+  const size_t data_offset = result_protocol->ProtocolDataOffset;
   if (result_protocol->ProtocolDataLength < sizeof(NVME_HEALTH_INFO_LOG) ||
-      result_protocol->ProtocolDataOffset +
-              sizeof(NVME_HEALTH_INFO_LOG) >
-          buffer.size()) {
+      data_offset > buffer.size() - sizeof(NVME_HEALTH_INFO_LOG)) {
     return {};
   }
 

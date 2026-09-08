@@ -336,7 +336,6 @@ class _UsageHistoryCard extends StatelessWidget {
     return _HistoryChartCard(
       icon: Icons.battery_alert,
       title: context.l10n.tr('batteryUsageHistory'),
-      subtitle: context.l10n.tr('batteryUsageSubtitle'),
       emptyText: context.l10n.tr('noBatteryUsage'),
       points: chartPoints,
       suffix: '%',
@@ -360,7 +359,6 @@ class _CapacityHistoryCard extends StatelessWidget {
     return _HistoryChartCard(
       icon: Icons.timeline,
       title: context.l10n.tr('capacityHistory'),
-      subtitle: context.l10n.tr('capacityHistorySubtitle'),
       emptyText: context.l10n.tr('noCapacityHistory'),
       points: chartPoints,
       suffix: '%',
@@ -380,7 +378,6 @@ class _CapacityHistoryCard extends StatelessWidget {
 class _HistoryChartCard extends StatelessWidget {
   final IconData icon;
   final String title;
-  final String subtitle;
   final String emptyText;
   final List<_ChartPoint> points;
   final String suffix;
@@ -390,7 +387,6 @@ class _HistoryChartCard extends StatelessWidget {
   const _HistoryChartCard({
     required this.icon,
     required this.title,
-    required this.subtitle,
     required this.emptyText,
     required this.points,
     required this.suffix,
@@ -414,8 +410,6 @@ class _HistoryChartCard extends StatelessWidget {
                 Text(title, style: theme.textTheme.titleMedium),
               ],
             ),
-            const SizedBox(height: 4),
-            Text(subtitle, style: theme.textTheme.bodySmall),
             const SizedBox(height: 16),
             SizedBox(
               height: 230,
@@ -567,16 +561,15 @@ class _PerformanceSettingsCard extends StatelessWidget {
   const _PerformanceSettingsCard();
 
   static const _items = [
-    (Icons.power_settings_new, 'powerAndBattery', 'powerAndBatteryDesc', '电源'),
-    (Icons.eco_outlined, 'energyTips', 'energyTipsDesc', '节能建议'),
-    (Icons.monitor, 'graphicsSettings', 'graphicsSettingsDesc', '图形设置'),
+    (Icons.power_settings_new, 'powerAndBattery', '电源'),
+    (Icons.eco_outlined, 'energyTips', '节能建议'),
+    (Icons.monitor, 'graphicsSettings', '图形设置'),
     (
       Icons.rocket_launch_outlined,
       'startupApplications',
-      'startupApplicationsDesc',
       '启动项',
     ),
-    (Icons.sports_esports_outlined, 'gameMode', 'gameModeDesc', '游戏模式'),
+    (Icons.sports_esports_outlined, 'gameMode', '游戏模式'),
   ];
 
   @override
@@ -615,9 +608,9 @@ class _PerformanceSettingsCard extends StatelessWidget {
                       .map(
                         (item) => SizedBox(
                           width: width,
-                          height: 88,
+                          height: 64,
                           child: OutlinedButton(
-                            onPressed: () => QuickJump.launch(item.$4),
+                            onPressed: () => QuickJump.launch(item.$3),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
@@ -637,13 +630,6 @@ class _PerformanceSettingsCard extends StatelessWidget {
                                     children: [
                                       Text(
                                         context.l10n.tr(item.$2),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        context.l10n.tr(item.$3),
-                                        style: theme.textTheme.bodySmall,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),

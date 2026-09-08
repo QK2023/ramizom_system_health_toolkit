@@ -2,13 +2,18 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'ps_runner.dart';
-import 'windows_paths.dart';
+import 'elevated_runner.dart';
 
 class MaintenanceResult {
   final bool success;
   final String message;
+  final int? exitCode;
 
-  const MaintenanceResult({required this.success, required this.message});
+  const MaintenanceResult({
+    required this.success,
+    required this.message,
+    this.exitCode,
+  });
 }
 
 class UpdatePauseState {
@@ -21,6 +26,57 @@ class UpdatePauseState {
 
 class SystemMaintenance {
   SystemMaintenance._();
+
+  static bool _toolBusy = false;
+  static const extraTools = [
+    'repairSystemFiles',
+    'repairWindowsImage',
+    'scanSystemDisk',
+    'flushDns',
+    'cleanComponentStore',
+  ];
+
+  /// Fixed catalog: external callers cannot inject executable names/arguments.
+  static Future<MaintenanceResult> runTool(String id) async {
+    if (_toolBusy ||
+        !extraTools.contains(id) ||
+        !Platform.isWindows ||
+        Platform.environment['FLUTTER_TEST'] == 'true') {
+      return const MaintenanceResult(success: false, message: 'actionFailed');
+    }
+    _toolBusy = true;
+    try {
+      final command = switch (id) {
+        'repairSystemFiles' =>
+          r"& (Join-Path $env:SystemRoot 'System32\sfc.exe') /scannow",
+        'repairWindowsImage' =>
+          r"& (Join-Path $env:SystemRoot 'System32\dism.exe') /Online /Cleanup-Image /RestoreHealth",
+        'scanSystemDisk' =>
+          r"& (Join-Path $env:SystemRoot 'System32\chkdsk.exe') $env:SystemDrive /scan",
+        'flushDns' =>
+          r"& (Join-Path $env:SystemRoot 'System32\ipconfig.exe') /flushdns",
+        'cleanComponentStore' =>
+          r"& (Join-Path $env:SystemRoot 'System32\dism.exe') /Online /Cleanup-Image /StartComponentCleanup",
+        _ => throw StateError('Unknown tool'),
+      };
+      // Native tools do not throw on nonzero exit codes. Preserve their outcome.
+      final code = await ElevatedRunner.run(
+        "\$ErrorActionPreference = 'Stop'\n$command\nexit \$LASTEXITCODE",
+      );
+      final ok = code == 0 || code == 3010;
+      return MaintenanceResult(
+        success: ok,
+        message: code == 3010
+            ? 'toolRestartRequired'
+            : ok
+            ? 'actionCompleted'
+            : 'toolFailedCode',
+        exitCode: code,
+      );
+    } finally {
+      _toolBusy = false;
+    }
+  }
 
   /// 检查本工具使用的 Windows Update 暂缓设置是否完整生效。
   static Future<UpdatePauseState> getUpdatePauseState() async {
@@ -116,26 +172,8 @@ class SystemMaintenance {
     }
   }
 
-  static Future<bool> _runElevated(String script) async {
-    try {
-      final encoded = _encodePowerShell(script);
-      final result = await Process.run(WindowsPaths.powershell, [
-        '-NoLogo',
-        '-NoProfile',
-        '-NonInteractive',
-        '-Command',
-        "\$powershell = Join-Path \$env:SystemRoot "
-            "'System32\\WindowsPowerShell\\v1.0\\powershell.exe'; "
-            "\$process = Start-Process -FilePath \$powershell -Verb RunAs "
-            "-WindowStyle Hidden -PassThru -Wait -ArgumentList "
-            "'-NoLogo','-NoProfile','-NonInteractive','-EncodedCommand','$encoded'; "
-            'exit \$process.ExitCode',
-      ]);
-      return result.exitCode == 0;
-    } catch (_) {
-      return false;
-    }
-  }
+  static Future<bool> _runElevated(String script) async =>
+      await ElevatedRunner.run(script) == 0;
 
   /// 清理 Windows 图标缓存并安全重启 Explorer。
   static Future<MaintenanceResult> repairShellIcons() async {
@@ -149,16 +187,6 @@ class SystemMaintenance {
     return const MaintenanceResult(success: true, message: '桌面与任务栏图标缓存已刷新');
   }
 
-  static String _encodePowerShell(String script) {
-    final bytes = <int>[];
-    for (final unit in script.codeUnits) {
-      bytes
-        ..add(unit & 0xff)
-        ..add(unit >> 8);
-    }
-    return base64Encode(bytes);
-  }
-
   static const _networkRepairScript = r'''
 $ErrorActionPreference = 'Stop'
 $ipconfig = Join-Path $env:SystemRoot 'System32\ipconfig.exe'
@@ -167,11 +195,6 @@ $netsh = Join-Path $env:SystemRoot 'System32\netsh.exe'
 if ($LASTEXITCODE -ne 0) { throw 'DNS flush failed' }
 & $netsh winsock reset | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'Winsock reset failed' }
-# 关闭 Windows 系统代理（非关键操作，静默失败）
-try {
-  Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' -Name ProxyEnable -Value 0 -Type DWord -ErrorAction Stop | Out-Null
-  & $netsh winhttp reset proxy 2>&1 | Out-Null
-} catch { }
 ''';
 
   static const _updatePauseScript = r'''

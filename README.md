@@ -88,13 +88,34 @@ enclosures provide only limited information.
 ### Privacy & Security
 
 Use the switches to change microphone, camera, or screen-capture restrictions.
-Windows may ask for administrator permission. Turning a switch off restores the
-previous value when possible. These settings cannot block external recording
-devices or every third-party capture tool.
+Windows asks for administrator permission. Microphone protection disables
+detected capture endpoints through Windows PnP; camera protection disables
+Camera-class devices and legacy USB video devices. These are device-level changes
+that affect all applications, including calls and potentially Windows Hello.
+Speakers, scanners and devices already disabled by someone else are left alone.
+Newly attached devices require reapplying protection; this is not a background
+device-enforcement service. Physical switches remain the strongest hardware control.
+
+Screen protection applies Windows AppPrivacy capture policies, disables Game DVR
+and Snipping Tool, and uses `SetWindowDisplayAffinity(WDA_EXCLUDEFROMCAPTURE)` on
+this application's own window. Windows policy support varies by edition and API;
+this does **not** guarantee blocking every third-party capture tool or protecting
+every other application's windows. The status verifies configured policy values
+and this window's affinity, not every possible capture path.
+
+Turning protection off restores recorded settings and devices. The separate
+restore button also recovers changes after a partially failed operation. Without
+an ownership backup, existing policies are preserved. Settings changed by another
+administrator after protection was applied are also preserved. Reopen relevant
+apps or restart Windows if the device reports that a restart is required.
+
+Agent interception/approval is intentionally not included: reliable control of
+independent agents requires sandboxing and agent-specific integration, duplicating
+the approval workflows already present in tools such as Codex.
 
 ### Recommended Settings
 
-This page shows basic suggestions and four tools:
+This page shows basic suggestions and the following tools:
 
 | Tool | Action |
 | --- | --- |
@@ -102,9 +123,18 @@ This page shows basic suggestions and four tools:
 | Resume updates | Restores the previous update values when available |
 | Repair network | Flushes DNS and resets Winsock |
 | Repair icons | Refreshes the Windows icon cache |
+| Repair system files | Runs SFC /scannow |
+| Repair Windows image | Runs DISM /Online /Cleanup-Image /RestoreHealth |
+| Scan system disk | Runs CHKDSK /scan on the Windows drive; requires NTFS |
+| Flush DNS cache | Clears cached DNS answers without modifying network/proxy settings |
+| Clean component store | Runs DISM /StartComponentCleanup; does not use ResetBase |
 
 Read the confirmation before running a tool. Network repair may require a
 restart.
+SFC and DISM can take several minutes; wait for completion. A successful DISM
+exit code of 3010 is reported as requiring restart. Failures show the exit code;
+Windows diagnostic logs are in `%SystemRoot%\Logs\CBS\CBS.log` and
+`%SystemRoot%\Logs\DISM\dism.log`. This application never restarts automatically.
 
 ### Settings
 

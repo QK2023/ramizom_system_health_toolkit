@@ -60,7 +60,6 @@ class _SettingsPageState extends State<SettingsPage> {
               ListTile(
                 leading: const Icon(Icons.brightness_6),
                 title: Text(l.tr('themeMode')),
-                subtitle: Text(_themeModeLabel(context, s.themeMode)),
                 trailing: DropdownButton<AppThemeMode>(
                   value: s.themeMode,
                   onChanged: (v) {
@@ -86,7 +85,6 @@ class _SettingsPageState extends State<SettingsPage> {
               ListTile(
                 leading: const Icon(Icons.palette),
                 title: Text(l.tr('themeColor')),
-                subtitle: Text(l.tr('chooseThemeColor')),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -131,7 +129,6 @@ class _SettingsPageState extends State<SettingsPage> {
           child: ListTile(
             leading: const Icon(Icons.language),
             title: Text(l.tr('appLanguage')),
-            subtitle: Text(_languageLabel(context, s.language)),
             trailing: DropdownButton<AppLanguage>(
               value: s.language,
               onChanged: (value) {
@@ -163,9 +160,6 @@ class _SettingsPageState extends State<SettingsPage> {
               ListTile(
                 leading: const Icon(Icons.update),
                 title: Text(l.tr('homeRefreshRate')),
-                subtitle: Text(
-                  l.tr('everySeconds', {'seconds': s.refreshIntervalSec}),
-                ),
                 trailing: DropdownButton<int>(
                   value: s.refreshIntervalSec,
                   onChanged: (v) {
@@ -242,24 +236,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  String _themeModeLabel(BuildContext context, AppThemeMode mode) {
-    switch (mode) {
-      case AppThemeMode.system:
-        return context.l10n.tr('followSystem');
-      case AppThemeMode.light:
-        return context.l10n.tr('light');
-      case AppThemeMode.dark:
-        return context.l10n.tr('dark');
-    }
-  }
-
-  String _languageLabel(BuildContext context, AppLanguage language) {
-    return switch (language) {
-      AppLanguage.system => context.l10n.tr('followSystem'),
-      AppLanguage.simplifiedChinese => context.l10n.tr('simplifiedChinese'),
-      AppLanguage.english => context.l10n.tr('english'),
-    };
-  }
 }
 
 class _SectionTitle extends StatelessWidget {

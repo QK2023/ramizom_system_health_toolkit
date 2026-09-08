@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'security_strings.dart';
 
 class AppLocalizations {
   final Locale locale;
@@ -13,7 +14,10 @@ class AppLocalizations {
   }
 
   String tr(String key, [Map<String, Object?> values = const {}]) {
-    var text = (isChinese ? _zh : _en)[key] ?? key;
+    var text =
+        (isChinese ? securityChinese : securityEnglish)[key] ??
+        (isChinese ? _zh : _en)[key] ??
+        key;
     for (final entry in values.entries) {
       text = text.replaceAll('{${entry.key}}', '${entry.value}');
     }
@@ -247,21 +251,21 @@ class AppLocalizations {
     'systemLooksGood': '系统状态良好',
     'noActionNeeded': '目前没有需要处理的问题。',
     'networkRepair': '修复网络',
-    'networkRepairConfirm': '将刷新 DNS 并重置网络组件。部分 VPN 可能需要重新连接。',
+    'networkRepairConfirm': '网络会重新连接。正在用 VPN 的话，之后可能要重新连一次。',
     'continueRepair': '继续修复',
     'pauseUpdates': '暂缓系统更新',
     'reapplyPause': '重新应用暂缓设置',
-    'pauseUpdatesConfirm': '将 Windows 更新暂缓至 2042-09-05。期间可能收不到安全更新。',
-    'reapplyPauseConfirm': '将重新写入并检查现有设置。截止日期仍为 2042-09-05。',
+    'pauseUpdatesConfirm': '更新会暂停到 2042-09-05。这期间可能收不到重要的安全更新。',
+    'reapplyPauseConfirm': '会重新检查并保存暂停设置，暂停到 2042-09-05。',
     'confirmPause': '确认暂缓',
     'reapply': '重新应用',
     'resumeUpdates': '恢复更新',
     'resumeUpdatesTitle': '恢复系统更新',
-    'resumeUpdatesConfirm': '将恢复暂缓前的更新设置。Windows 可以再次检查更新。',
+    'resumeUpdatesConfirm': 'Windows 会重新检查更新。',
     'repairShell': '修复桌面和任务栏图标',
-    'repairShellConfirm': '将刷新 Windows 图标缓存。不会关闭桌面或正在使用的应用。',
+    'repairShellConfirm': '会让桌面和任务栏图标重新显示，不会关闭正在使用的软件。',
     'refreshAndRestart': '刷新图标',
-    'stillChecking': '检测时间较长，仍在后台继续。',
+    'stillChecking': '还在检查，请稍等。',
     'recommendedForYou': '推荐操作',
     'checkAgain': '重新检测',
     'maintenanceTools': '所有工具',
@@ -486,25 +490,24 @@ class AppLocalizations {
     'noActionNeeded': 'There is nothing you need to do right now.',
     'networkRepair': 'Fix network',
     'networkRepairConfirm':
-        'This refreshes DNS and resets Windows network sockets. Some VPNs may need to reconnect.',
+        'Your network will reconnect. If you use a VPN, you may need to reconnect it afterwards.',
     'continueRepair': 'Continue',
     'pauseUpdates': 'Pause Windows updates',
     'reapplyPause': 'Reapply pause settings',
     'pauseUpdatesConfirm':
-        'Windows updates will be paused until September 5, 2042. You may miss security updates.',
+        'Updates will be paused until September 5, 2042. You may miss important security updates.',
     'reapplyPauseConfirm':
-        'The current pause settings will be written and checked again. The end date stays September 5, 2042.',
+        'We will check and save the pause setting again. Updates stay paused until September 5, 2042.',
     'confirmPause': 'Pause updates',
     'reapply': 'Reapply',
     'resumeUpdates': 'Resume',
     'resumeUpdatesTitle': 'Resume Windows updates',
-    'resumeUpdatesConfirm':
-        'This restores the update settings saved before the pause. Windows can check for updates again.',
+    'resumeUpdatesConfirm': 'Windows will check for updates again.',
     'repairShell': 'Fix desktop and taskbar icons',
     'repairShellConfirm':
-        'This refreshes the Windows icon cache. It will not close the desktop or your open apps.',
+        'This refreshes desktop and taskbar icons. Your open apps will stay open.',
     'refreshAndRestart': 'Refresh icons',
-    'stillChecking': 'The check is taking longer. It is still running.',
+    'stillChecking': 'Still checking. Please wait.',
     'recommendedForYou': 'Recommended actions',
     'checkAgain': 'Check again',
     'maintenanceTools': 'All Tools',

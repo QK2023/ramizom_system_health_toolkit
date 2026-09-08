@@ -27,6 +27,8 @@ class _SecurityPageState extends State<SecurityPage> {
   }
 
   Future<void> _load() async {
+    if (_busy) return;
+    setState(() => _loading = true);
     final state = await PrivacyProtection.collect();
     if (!mounted) return;
     setState(() {
@@ -37,6 +39,8 @@ class _SecurityPageState extends State<SecurityPage> {
 
   Future<void> _setFeature(PrivacyFeature feature, bool enabled) async {
     if (_busy) return;
+    if (enabled && !await _confirmProtection()) return;
+    if (!mounted || _busy) return;
     setState(() => _busyFeature = feature);
     final result = await PrivacyProtection.setFeature(feature, enabled);
     if (!mounted) return;
@@ -49,6 +53,8 @@ class _SecurityPageState extends State<SecurityPage> {
 
   Future<void> _setAll(bool enabled) async {
     if (_busy) return;
+    if (enabled && !await _confirmProtection()) return;
+    if (!mounted || _busy) return;
     setState(() => _masterBusy = true);
     final result = await PrivacyProtection.apply(
       microphone: enabled,
@@ -74,6 +80,26 @@ class _SecurityPageState extends State<SecurityPage> {
     );
   }
 
+  Future<bool> _confirmProtection() async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(context.l10n.tr('privacyProtection')),
+          content: Text(context.l10n.tr('privacyConfirm')),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(context.l10n.tr('cancel')),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(context.l10n.tr('runTool')),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+
   @override
   Widget build(BuildContext context) {
     if (_loading) return const Center(child: CircularProgressIndicator());
@@ -87,6 +113,20 @@ class _SecurityPageState extends State<SecurityPage> {
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
+        Wrap(
+          spacing: 8,
+          children: [
+            TextButton.icon(
+              onPressed: _busy ? null : _load,
+              icon: const Icon(Icons.refresh),
+              label: Text(context.l10n.tr('privacyRefresh')),
+            ),
+            TextButton(
+              onPressed: _busy ? null : () => _setAll(false),
+              child: Text(context.l10n.tr('privacyRestore')),
+            ),
+          ],
+        ),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -149,7 +189,7 @@ class _SecurityPageState extends State<SecurityPage> {
             color: theme.colorScheme.errorContainer,
             child: Padding(
               padding: const EdgeInsets.all(12),
-              child: Text(context.l10n.tr('privacyFailed')),
+              child: Text(context.l10n.tr(_state.message!)),
             ),
           ),
         ],
@@ -158,7 +198,6 @@ class _SecurityPageState extends State<SecurityPage> {
           icon: Icons.mic_off_outlined,
           title: context.l10n.tr('microphoneProtection'),
           description: context.l10n.tr('microphoneProtectionDesc'),
-          impact: context.l10n.tr('microphoneProtectionImpact'),
           enabled: _state.microphoneProtected,
           busy: _busyFeature == PrivacyFeature.microphone,
           onChanged: _busy
@@ -170,18 +209,17 @@ class _SecurityPageState extends State<SecurityPage> {
           icon: Icons.screen_lock_landscape_outlined,
           title: context.l10n.tr('screenProtection'),
           description: context.l10n.tr('screenProtectionDesc'),
-          impact: context.l10n.tr('screenProtectionImpact'),
-          enabled: false,
-          comingSoon: true,
-          busy: false,
-          onChanged: null,
+          enabled: _state.screenCaptureProtected,
+          busy: _busyFeature == PrivacyFeature.screenCapture,
+          onChanged: _busy
+              ? null
+              : (value) => _setFeature(PrivacyFeature.screenCapture, value),
         ),
         const SizedBox(height: 12),
         _ProtectionCard(
           icon: Icons.videocam_off_outlined,
           title: context.l10n.tr('cameraProtection'),
           description: context.l10n.tr('cameraProtectionDesc'),
-          impact: context.l10n.tr('cameraProtectionImpact'),
           enabled: _state.cameraProtected,
           busy: _busyFeature == PrivacyFeature.camera,
           onChanged: _busy
@@ -199,20 +237,18 @@ class _ProtectionCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String description;
-  final String impact;
   final bool enabled;
   final bool busy;
-  final bool comingSoon;
+
   final ValueChanged<bool>? onChanged;
 
   const _ProtectionCard({
     required this.icon,
     required this.title,
     required this.description,
-    required this.impact,
     required this.enabled,
     required this.busy,
-    this.comingSoon = false,
+
     required this.onChanged,
   });
 
@@ -242,7 +278,7 @@ class _ProtectionCard extends StatelessWidget {
                   Text(title, style: theme.textTheme.titleMedium),
                   const SizedBox(height: 5),
                   Text(
-                    '$description，$impact。',
+                    description,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -251,24 +287,7 @@ class _ProtectionCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            if (comingSoon)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  context.l10n.tr('comingSoon'),
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              )
-            else if (busy)
+            if (busy)
               const Padding(
                 padding: EdgeInsets.all(10),
                 child: SizedBox(

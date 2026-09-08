@@ -9,6 +9,8 @@ $RECYCLE.BIN/
 .idea/
 .vscode/
 .vs/
+.direnv/
+.envrc
 *.iml
 *.ipr
 *.iws
@@ -18,6 +20,9 @@ $RECYCLE.BIN/
 *.sln.docstates
 *.swp
 *.tmp
+*.bak
+*.orig
+*.rej
 *~
 .history/
 
@@ -31,12 +36,14 @@ $RECYCLE.BIN/
 **/.plugin_symlinks/
 **/doc/api/
 **/ios/Flutter/.last_build_id
+pubspec_overrides.yaml
 
 # Build, test, and analysis output
 /build/
 /coverage/
 .build/
 .buildlog/
+.cache/
 *.log
 *.dmp
 *.symbols
@@ -50,24 +57,24 @@ windows/x64/
 windows/CMakeFiles/
 windows/cmake_install.cmake
 windows/CMakeCache.txt
-AppPackages/
-BundleArtifacts/
-PackageLayout/
-_Test/
+windows/runner/Debug/
+windows/runner/Release/
+windows/runner/RelWithDebInfo/
+windows/runner/MinSizeRel/
+/AppPackages/
+/BundleArtifacts/
+/PackageLayout/
+/_Test/
 *.appx
 *.appxbundle
 *.appxupload
 *.appinstaller
+*.appxrecipe
+*.appxsym
 *.msix
 *.msixbundle
 *.msixupload
-*.dll
-*.exe
-*.exp
-*.ilk
-*.lib
-*.obj
-*.pdb
+*.msixsym
 
 # Local environment and machine-specific configuration
 .env
@@ -75,6 +82,7 @@ _Test/
 !.env.example
 local.properties
 migrate_working_dir/
+*.code-workspace
 
 # Credentials, signing material, and private keys
 *.cer
@@ -108,6 +116,15 @@ battery-report*.html
 *.etl
 *.evtx
 *.trace
+*.sarif
+*.VC.db
+*.VC.opendb
+*.opensdf
+*.sdf
+*.ncb
+*.idb
+*.tlog
+ipch/
 
 # Mobile build artifacts (kept for cross-platform Flutter hygiene)
 /android/app/debug/

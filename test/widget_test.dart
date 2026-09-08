@@ -2,11 +2,14 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:system_health_toolkit/main.dart';
 import 'package:system_health_toolkit/localization/app_localizations.dart';
 import 'package:system_health_toolkit/services/app_settings.dart';
+import 'package:system_health_toolkit/pages/recommendations_page.dart';
+import 'package:system_health_toolkit/services/system_maintenance.dart';
 
 Future<AppSettings> _initSettings() async {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -47,10 +50,65 @@ void main() {
     expect(find.text('隐私保护'), findsOneWidget);
     expect(find.text('关闭麦克风访问'), findsOneWidget);
     expect(find.text('关闭录屏和截图'), findsOneWidget);
+    expect(find.text('即将推出'), findsNothing);
+    final captureCard = find.ancestor(
+      of: find.text('关闭录屏和截图'),
+      matching: find.byType(Card),
+    );
+    final captureSwitch = find.descendant(
+      of: captureCard,
+      matching: find.byType(Switch),
+    );
+    expect(tester.widget<Switch>(captureSwitch).onChanged, isNotNull);
+    await tester.scrollUntilVisible(find.text('关闭摄像头访问'), 180);
     expect(find.text('关闭摄像头访问'), findsOneWidget);
     expect(find.text('Windows Defender 防病毒'), findsNothing);
     expect(find.text('设备概览'), findsNothing);
   });
+
+  for (final locale in [const Locale('en'), const Locale('zh', 'CN')]) {
+    testWidgets(
+      'Five tools fit a narrow window and require confirmation ($locale)',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(480, 800));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        final l = AppLocalizations(locale);
+        await tester.pumpWidget(
+          MaterialApp(
+            locale: locale,
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            home: const Scaffold(body: RecommendationsPage()),
+          ),
+        );
+        await tester.pumpAndSettle();
+        for (final id in SystemMaintenance.extraTools) {
+          await tester.scrollUntilVisible(find.text(l.tr(id)), 200);
+          final tile = find.ancestor(
+            of: find.text(l.tr(id)),
+            matching: find.byType(ListTile),
+          );
+          await tester.ensureVisible(
+            find.descendant(of: tile, matching: find.byType(OutlinedButton)),
+          );
+          await tester.pumpAndSettle();
+          await tester.tap(
+            find.descendant(of: tile, matching: find.byType(OutlinedButton)),
+          );
+          await tester.pumpAndSettle();
+          expect(find.byType(AlertDialog), findsOneWidget);
+          await tester.tap(find.text(l.tr('cancel')));
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+        }
+      },
+    );
+  }
 
   testWidgets('Settings page allows changing theme mode', (
     WidgetTester tester,

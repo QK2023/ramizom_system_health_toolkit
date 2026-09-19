@@ -9,7 +9,7 @@ few common settings and repair tools.
 
 | Item | Details |
 | --- | --- |
-| Version | 7.0.0.0 |
+| Version | 7.0.0 |
 | Platform | Windows |
 | Publisher | Ching-kai Huang |
 | Website | [Ramizom.com](https://ramizom.com) |

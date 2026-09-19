@@ -235,9 +235,6 @@ class _DeviceOverviewCard extends StatelessWidget {
                             'count': disks.length,
                           }),
                     color: _diskHealthColor(worstHealth),
-                    trailing: disks.isNotEmpty
-                        ? _DiskHealthDot(level: worstHealth)
-                        : null,
                   ),
                 ),
               ],
@@ -260,44 +257,16 @@ class _DeviceOverviewCard extends StatelessWidget {
   }
 }
 
-/// 磁盘健康状态指示灯
-class _DiskHealthDot extends StatelessWidget {
-  final int level;
-  const _DiskHealthDot({required this.level});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = level == 0
-        ? Colors.green
-        : level == 1
-        ? Colors.orange
-        : Colors.red;
-    return Container(
-      width: 10,
-      height: 10,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 4),
-        ],
-      ),
-    );
-  }
-}
-
 class _OverviewChip extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
   final Color color;
-  final Widget? trailing;
   const _OverviewChip({
     required this.icon,
     required this.label,
     required this.value,
     required this.color,
-    this.trailing,
   });
 
   @override
@@ -331,7 +300,6 @@ class _OverviewChip extends StatelessWidget {
               ],
             ),
           ),
-          if (trailing != null) ...[const SizedBox(width: 8), trailing!],
         ],
       ),
     );

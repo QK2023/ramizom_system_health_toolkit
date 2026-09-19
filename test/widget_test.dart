@@ -43,25 +43,21 @@ void main() {
     // 未访问的功能页不会在启动阶段初始化和采集系统数据。
     expect(find.text('账户信息'), findsNothing);
 
-    // 点击“隐私与安全”导航项
-    await tester.tap(find.byIcon(Icons.shield_outlined));
+    // 隐私设置入口已经合并到“推荐”页。
+    expect(find.byIcon(Icons.shield_outlined), findsNothing);
+    await tester.tap(find.byIcon(Icons.tips_and_updates_outlined));
     await tester.pumpAndSettle();
 
-    expect(find.text('隐私保护'), findsOneWidget);
-    expect(find.text('关闭麦克风访问'), findsOneWidget);
-    expect(find.text('关闭录屏和截图'), findsOneWidget);
-    expect(find.text('即将推出'), findsNothing);
-    final captureCard = find.ancestor(
-      of: find.text('关闭录屏和截图'),
-      matching: find.byType(Card),
-    );
-    final captureSwitch = find.descendant(
-      of: captureCard,
-      matching: find.byType(Switch),
-    );
-    expect(tester.widget<Switch>(captureSwitch).onChanged, isNotNull);
-    await tester.scrollUntilVisible(find.text('关闭摄像头访问'), 180);
-    expect(find.text('关闭摄像头访问'), findsOneWidget);
+    for (final label in ['定位', '相机', '麦克风', '磁盘加密']) {
+      expect(find.text(label), findsOneWidget);
+      expect(
+        find.ancestor(of: find.text(label), matching: find.byType(Card)),
+        findsOneWidget,
+      );
+    }
+    expect(find.byType(Switch), findsNothing);
+    expect(find.text('刷新状态'), findsNothing);
+    expect(find.text('恢复系统设置'), findsNothing);
     expect(find.text('Windows Defender 防病毒'), findsNothing);
     expect(find.text('设备概览'), findsNothing);
   });
@@ -138,6 +134,7 @@ void main() {
 
     expect(tester.takeException(), isNull);
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('所有工具'), 300);
     expect(find.text('所有工具'), findsOneWidget);
     expect(find.text('暂缓系统更新'), findsWidgets);
   });
@@ -192,12 +189,13 @@ void main() {
     expect(find.byType(NavigationRail), findsNothing);
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.byIcon(Icons.battery_6_bar_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.shield_outlined), findsNothing);
+    expect(find.text('推荐'), findsOneWidget);
 
     await tester.tap(find.text('其他'));
     await tester.pumpAndSettle();
 
     expect(find.text('磁盘健康'), findsOneWidget);
-    expect(find.text('推荐设置'), findsOneWidget);
     expect(find.text('设置'), findsOneWidget);
   });
 

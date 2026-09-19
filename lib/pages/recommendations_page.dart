@@ -8,6 +8,7 @@ import '../services/quick_jump.dart';
 import '../services/security_monitor.dart';
 import '../services/system_maintenance.dart';
 import '../services/system_monitor.dart';
+import 'privacy_settings_section.dart';
 
 /// 推荐的设置页面：综合系统状态给出真实、可操作的优化建议
 class RecommendationsPage extends StatefulWidget {
@@ -384,6 +385,8 @@ class _RecommendationsPageState extends State<RecommendationsPage> {
           ),
         ),
         const SizedBox(height: 12),
+        const PrivacySettingsSection(),
+        const SizedBox(height: 24),
         Row(
           children: [
             Icon(Icons.build_circle_outlined, color: theme.colorScheme.primary),

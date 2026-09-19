@@ -7,11 +7,9 @@ import 'pages/disk_health_page.dart';
 import 'pages/home_dashboard_page.dart';
 import 'pages/power_page.dart';
 import 'pages/recommendations_page.dart';
-import 'pages/security_page.dart';
 import 'pages/settings_page.dart';
 
 import 'services/app_settings.dart';
-import 'services/privacy_protection.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -115,11 +113,6 @@ class _ShellPageState extends State<ShellPage> {
       label: Text(context.l10n.tr('home')),
     ),
     NavigationRailDestination(
-      icon: Icon(Icons.shield_outlined),
-      selectedIcon: Icon(Icons.shield),
-      label: Text(context.l10n.tr('privacySecurity')),
-    ),
-    NavigationRailDestination(
       icon: Icon(Icons.battery_6_bar_outlined),
       selectedIcon: Icon(Icons.battery_6_bar),
       label: Text(context.l10n.tr('powerPerformance')),
@@ -144,9 +137,8 @@ class _ShellPageState extends State<ShellPage> {
   @override
   void initState() {
     super.initState();
-    _pages = List<Widget?>.filled(6, null);
+    _pages = List<Widget?>.filled(5, null);
     _pages[0] = HomeDashboardPage(settings: widget.settings);
-    PrivacyProtection.collect();
   }
 
   @override
@@ -161,11 +153,10 @@ class _ShellPageState extends State<ShellPage> {
   Widget _pageFor(int index) {
     return switch (index) {
       0 => HomeDashboardPage(settings: widget.settings),
-      1 => const SecurityPage(),
-      2 => const PowerPage(),
-      3 => const DiskHealthPage(),
-      4 => const RecommendationsPage(),
-      5 => SettingsPage(settings: widget.settings),
+      1 => const PowerPage(),
+      2 => const DiskHealthPage(),
+      3 => const RecommendationsPage(),
+      4 => SettingsPage(settings: widget.settings),
       _ => const SizedBox.shrink(),
     };
   }
@@ -187,21 +178,15 @@ class _ShellPageState extends State<ShellPage> {
           children: [
             ListTile(
               leading: const Icon(Icons.storage_outlined),
-              selected: _selectedIndex == 3,
+              selected: _selectedIndex == 2,
               title: Text(context.l10n.tr('diskHealth')),
-              onTap: () => Navigator.pop(context, 3),
-            ),
-            ListTile(
-              leading: const Icon(Icons.tips_and_updates_outlined),
-              selected: _selectedIndex == 4,
-              title: Text(context.l10n.tr('recommendations')),
-              onTap: () => Navigator.pop(context, 4),
+              onTap: () => Navigator.pop(context, 2),
             ),
             ListTile(
               leading: const Icon(Icons.settings_outlined),
-              selected: _selectedIndex == 5,
+              selected: _selectedIndex == 4,
               title: Text(context.l10n.tr('settings')),
-              onTap: () => Navigator.pop(context, 5),
+              onTap: () => Navigator.pop(context, 4),
             ),
             const SizedBox(height: 8),
           ],
@@ -243,12 +228,17 @@ class _ShellPageState extends State<ShellPage> {
                 ),
           bottomNavigationBar: portrait
               ? NavigationBar(
-                  selectedIndex: _selectedIndex <= 2 ? _selectedIndex : 3,
+                  selectedIndex: switch (_selectedIndex) {
+                    0 => 0,
+                    1 => 1,
+                    3 => 2,
+                    _ => 3,
+                  },
                   onDestinationSelected: (index) {
                     if (index == 3) {
                       _showOtherPages();
                     } else {
-                      _selectPage(index);
+                      _selectPage(index == 2 ? 3 : index);
                     }
                   },
                   destinations: [
@@ -258,14 +248,14 @@ class _ShellPageState extends State<ShellPage> {
                       label: context.l10n.tr('home'),
                     ),
                     NavigationDestination(
-                      icon: const Icon(Icons.shield_outlined),
-                      selectedIcon: const Icon(Icons.shield),
-                      label: context.l10n.tr('security'),
-                    ),
-                    NavigationDestination(
                       icon: const Icon(Icons.battery_6_bar_outlined),
                       selectedIcon: const Icon(Icons.battery_6_bar),
                       label: context.l10n.tr('battery'),
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.tips_and_updates_outlined),
+                      selectedIcon: const Icon(Icons.tips_and_updates),
+                      label: context.l10n.tr('recommendations'),
                     ),
                     NavigationDestination(
                       icon: const Icon(Icons.more_horiz),

@@ -163,9 +163,19 @@ class SystemMaintenance {
           message: '未能获得管理员权限，网络修复已取消',
         );
       }
+      final userProxyResult = await PsRunner.runResult(
+        _disableUserProxyScript,
+        timeout: const Duration(seconds: 5),
+      );
+      if (!userProxyResult.succeeded) {
+        return const MaintenanceResult(
+          success: false,
+          message: '系统网络已重置，但当前用户代理未能关闭',
+        );
+      }
       return const MaintenanceResult(
         success: true,
-        message: '网络协议栈已重置。建议重新启动 Windows 以完成修复',
+        message: '代理、DNS 和网络协议栈已重置。建议重新启动 Windows 以完成修复',
       );
     } catch (error) {
       return MaintenanceResult(success: false, message: '网络修复失败：$error');
@@ -193,8 +203,22 @@ $ipconfig = Join-Path $env:SystemRoot 'System32\ipconfig.exe'
 $netsh = Join-Path $env:SystemRoot 'System32\netsh.exe'
 & $ipconfig /flushdns | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'DNS flush failed' }
+& $netsh winhttp reset proxy | Out-Null
+if ($LASTEXITCODE -ne 0) { throw 'WinHTTP proxy reset failed' }
 & $netsh winsock reset | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'Winsock reset failed' }
+''';
+
+  static const _disableUserProxyScript = r'''
+$ErrorActionPreference = 'Stop'
+$path = 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings'
+New-Item -Path $path -Force | Out-Null
+# Keep the configured server and bypass list so the user can turn the proxy
+# back on from Windows Settings if it is needed later.
+Set-ItemProperty -Path $path -Name 'ProxyEnable' -Type DWord -Value 0
+$value = (Get-ItemProperty -Path $path -Name 'ProxyEnable' -ErrorAction Stop).ProxyEnable
+if ([int]$value -ne 0) { throw 'User proxy disable failed' }
+Write-Output 'OK'
 ''';
 
   static const _updatePauseScript = r'''
